@@ -1,0 +1,70 @@
+import cv2
+import numpy as np
+from imutils import perspective
+from imutils import contours
+import imutils
+import glob
+import time
+
+path = r'C:\Users\JohnnyCCHuang\Desktop\AIA\IMT_POT\2020-10-26_081019.jpg'
+
+tStart=time.time()
+
+
+###找出白紙四角
+imgR = cv2.imread(path)
+edges = cv2.Canny(imgR, 0, 255, apertureSize=3)
+cv2.imshow('canny',edges)
+contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+###給予一個全黑的底圖
+temp = np.zeros(imgR.shape,np.uint8)*255
+#area2 放入計算後的面積# (index,面積)
+area2 = []
+for k in range(len(contours)):
+    area2.append((k,cv2.contourArea(contours[k])))
+    maskWi = cv2.drawContours(temp, contours, k, (0,k*70,k*70), cv2.FILLED)
+
+##排序找出最大的面積
+area2.sort(key=lambda score: score[1])
+index,_ = area2[-1]
+
+
+####將找出的目標畫出來
+temp = np.zeros(imgR.shape,np.uint8)*255
+area2 = []
+maskWi = cv2.drawContours(temp, contours, index, (0,k*70,k*70), cv2.FILLED)
+cv2.imshow("Mask2", maskWi)
+
+
+####給予drawContours某個index的全部座標,目標x,目標y(可輸入左上右下..等等)
+def AreaPoint(Area,MasX,MasY):
+    A1 = []
+    for p in Area:
+        x,y = p[-1]
+        if A1:
+            AA = (y - MasY)**2 + (x - MasX)**2
+            if AA < A1:
+                A1 = AA.copy()
+                XX,YY = x,y
+        else:
+            A1 = (y - MasY)**2 + (x - MasX)**2
+            XX,YY = x,y
+    return XX,YY
+
+####contours[index]最大面積的影像的座標
+###找到四個點
+maskWi = imgR.copy()
+X1,Y1 = AreaPoint(contours[index],0,0)
+cv2.circle(maskWi,(X1,Y1), 30, (0, 0, 255), 3)
+X2,Y2 = AreaPoint(contours[index],imgR.shape[1],0)
+cv2.circle(maskWi,(X2,Y2), 30, (0, 255, 0), 3)
+X3,Y3 = AreaPoint(contours[index],0,imgR.shape[0])
+cv2.circle(maskWi,(X3,Y3), 30, (255, 0, 0), 3)
+X4,Y4 = AreaPoint(contours[index],imgR.shape[1],imgR.shape[0])
+#將四個點放入圖中
+cv2.circle(maskWi,(X4,Y4), 30, (0, 0, 255), 3)
+cv2.imshow("Mask2", maskWi)
+
+with open("4Point.txt","w") as f:
+    f.write('%i,%i,%i,%i,%i,%i,%i,%i'%(X1,Y1,X2,Y2,X3,Y3,X4,Y4))
