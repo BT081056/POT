@@ -1,0 +1,38 @@
+
+import cv2
+import numpy as np
+
+#img = cv2.imread('sudokusmall.png')
+#rows,cols,ch = img.shape
+img = imgR.copy()
+# 左图中画面中的点的坐标 四个
+
+
+with open("4Point.txt", "r") as f:    #開啟檔案
+    data = f.read()   #讀取檔案
+    X1,Y1,X2,Y2,X3,Y3,X4,Y4 = data.split(',')
+    print(X1,Y1,X2,Y2,X3,Y3,X4,Y4)
+
+pts1 = np.float32([[X1,Y2],[X2,Y2],[X3,Y3],[X4,Y4]])
+# 变换到新图片中，四个点对应的新的坐标 一一对应
+pts2 = np.float32([[0,0],[imgR.shape[1],0],[0,imgR.shape[0]],[imgR.shape[1],imgR.shape[0]]])
+
+# 生成变换矩阵
+M = cv2.getPerspectiveTransform(pts1,pts2)
+# 进行透视变换
+#dst = cv2.warpPerspective(img,M,(imgR.shape[1],imgR.shape[0]),cv2.INTER_LINEAR)
+dst = cv2.warpPerspective(img,M,(imgR.shape[1],imgR.shape[0]),cv2.INTER_LINEAR)
+cv2.imshow('Original',dst)
+
+edges = cv2.Canny(dst, 0, 255, apertureSize=3)
+cv2.imshow('canny',edges)
+contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+
+temp = np.zeros(imgR.shape,np.uint8)*255
+#area2 放入計算後的面積# (index,面積)
+area = []
+for k in range(len(contours)):
+    area.append((cv2.contourArea(contours[k])))
+    maskWi = cv2.drawContours(temp, contours, k, (0,k*70,k*70), cv2.FILLED)
+cv2.imshow('Co',maskWi)
